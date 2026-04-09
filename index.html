@@ -2776,15 +2776,26 @@
         
         document.getElementById('mode-badge').style.display = isReinforcementMode ? 'block' : 'none';
 
-        let pool = [];
         if (isReinforcementMode) {
-            pool = allQuestions.filter(q => incorrectIds.includes(q.id));
+            // En modo refuerzo, tomamos las preguntas falladas al azar
+            let pool = allQuestions.filter(q => incorrectIds.includes(q.id));
+            let shuffled = pool.sort(() => 0.5 - Math.random());
+            roundQuestions = shuffled.slice(0, Math.min(MAX_QUESTIONS, shuffled.length));
         } else {
-            pool = [...allQuestions];
-        }
+            // MODO EXAMEN: Distribución estructurada por temas (Basada en los pesos reales del CCSE)
+            // Filtramos por el primer dígito del ID (1, 2, 3, 4, 5) usando Math.floor(id / 1000)
+            const t1 = allQuestions.filter(q => Math.floor(q.id / 1000) === 1).sort(() => 0.5 - Math.random()).slice(0, 8);
+            const t2 = allQuestions.filter(q => Math.floor(q.id / 1000) === 2).sort(() => 0.5 - Math.random()).slice(0, 2);
+            const t3 = allQuestions.filter(q => Math.floor(q.id / 1000) === 3).sort(() => 0.5 - Math.random()).slice(0, 2);
+            const t4 = allQuestions.filter(q => Math.floor(q.id / 1000) === 4).sort(() => 0.5 - Math.random()).slice(0, 3);
+            const t5 = allQuestions.filter(q => Math.floor(q.id / 1000) === 5).sort(() => 0.5 - Math.random()).slice(0, 5);
 
-        let shuffled = pool.sort(() => 0.5 - Math.random());
-        roundQuestions = shuffled.slice(0, Math.min(MAX_QUESTIONS, shuffled.length));
+            // Juntamos todas las preguntas seleccionadas
+            let combined = [...t1, ...t2, ...t3, ...t4, ...t5];
+            
+            // Mezclamos el resultado final para que los temas salgan salteados durante el test
+            roundQuestions = combined.sort(() => 0.5 - Math.random());
+        }
         
         currentIndex = 0;
         score = 0;
@@ -2795,7 +2806,7 @@
         
         loadQuestion();
     }
-
+    
     function loadQuestion() {
         answered = false;
         
