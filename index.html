@@ -15,7 +15,7 @@
             --verde-oscuro: #46a302;
             --rojo-incorrecto: #ff4b4b;
             --rojo-inc-oscuro: #ea2b2b;
-            --fondo: #f9f9fb;
+            --fondo: #c46c56;
             --gris-claro: #e5e5e5;
             --texto: #4b4b4b;
         }
@@ -63,15 +63,14 @@
             transform: translate(-50%, -50%);
             width: 90%;
             height: 90%;
-            background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Escudo_de_Espa%C3%B1a_%28mazonado%29.svg/800px-Escudo_de_Espa%C3%B1a_%28mazonado%29.svg.png');
+            background-image: url('https://pomarus.com/wp-content/uploads/et_temp/logo-escudoreal-646230_800x675.png');
             background-repeat: no-repeat;
             background-position: center;
             background-size: contain;
-            /* Filtros para hacerlo rojo y muy transparente */
             opacity: 0.04; 
             filter: sepia(100%) hue-rotate(330deg) saturate(300%) brightness(80%);
-            z-index: -1; /* Para que quede detrás del texto y los botones */
-            pointer-events: none; /* Para que no bloquee los clics */
+            z-index: -1; 
+            pointer-events: none; 
         }
 
         /* PANTALLA DE INICIO */
@@ -160,8 +159,8 @@
         .btn-yellow { background-color: var(--amarillo-espana); border-bottom-color: var(--amarillo-oscuro); color: var(--rojo-oscuro); }
         .btn-outline { background-color: white; border: 2px solid var(--gris-claro); border-bottom: 6px solid var(--gris-claro); color: var(--texto); }
 
-        /* PANTALLA DE RESULTADOS */
-        #results-screen, #quiz-screen { display: none; }
+        /* PANTALLAS */
+        #results-screen, #quiz-screen, #logros-screen { display: none; }
         .result-icon { font-size: 80px; margin-bottom: 10px; animation: pop 0.5s ease-out; }
         .result-title { font-size: 32px; color: var(--rojo-espana); margin-bottom: 5px; }
         .result-subtitle { font-size: 20px; color: #777; margin-bottom: 30px; }
@@ -177,6 +176,37 @@
         .mode-badge { font-weight: bold; color: var(--amarillo-oscuro); background: #fff8e1; padding: 4px 10px; border-radius: 8px; font-size: 14px; display: none;}
         .sound-toggle { background: none; border: none; font-size: 24px; cursor: pointer; opacity: 0.7;}
         .sound-toggle:hover { opacity: 1; }
+
+        /* SISTEMA DE LOGROS */
+        .logros-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .logro-item {
+            background: white;
+            border: 2px solid var(--gris-claro);
+            border-radius: 12px;
+            padding: 15px 10px;
+            text-align: center;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        /* Estado: Bloqueado (Gris y translúcido) */
+        .logro-locked { opacity: 0.4; filter: grayscale(100%); }
+        /* Estado: Desbloqueado (A color con borde dorado) */
+        .logro-unlocked {
+            border-color: var(--amarillo-espana);
+            box-shadow: 0 4px 10px rgba(241, 191, 0, 0.2);
+            opacity: 1;
+            filter: grayscale(0%);
+        }
+        .logro-icon { font-size: 35px; margin-bottom: 8px; }
+        .logro-title { font-weight: 800; font-size: 14px; color: var(--texto); margin-bottom: 4px;}
+        .logro-desc { font-size: 11px; color: #777; line-height: 1.2;}
 
         /* AVISOS LEGALES / DISCLAIMER */
         .disclaimer-container {
@@ -205,12 +235,14 @@
 <body>
 
 <div class="app-container" id="start-screen">
-    <div class="logo-espana">🇪🇸 📖</div>
+    <div class="logo-espana">🇪🇸 💃</div>
     <h1 class="start-title">Prueba CCSE 2026</h1>
     <p class="start-desc">Ponte a prueba con este simulador oficial. <br><br>Tendrás 45 minutos para responder 20 preguntas al azar. ¿Conseguirás la nacionalidad?</p>
     
     <button class="action-btn" onclick="startQuiz(false)">¡Hacer Examen!</button>
     <button class="action-btn btn-yellow" id="btn-refuerzo-main" style="display: none;" onclick="startQuiz(true)">Preguntas de refuerzo (0)</button>
+    
+    <button class="action-btn btn-outline" onclick="toggleLogros()" style="margin-top: 15px;">🏆 Ver Logros</button>
 </div>
 
 <div class="app-container" id="quiz-screen">
@@ -249,6 +281,13 @@
     <button class="action-btn btn-outline" onclick="resetToStart()" style="margin-top: 15px;">Volver al Inicio</button>
 </div>
 
+<div class="app-container" id="logros-screen">
+    <h2 style="text-align: center; color: var(--rojo-espana); margin-bottom: 25px;">Tus Logros</h2>
+    <div class="logros-grid" id="logros-container"></div>
+    <div style="flex-grow: 1;"></div>
+    <button class="action-btn btn-outline" onclick="toggleLogros()">Volver al Inicio</button>
+</div>
+
 <div class="disclaimer-container">
     <div class="disclaimer-box">
         <p><strong>Aviso Educativo y Propiedad Intelectual:</strong><br>
@@ -261,9 +300,10 @@
 
 <script>
     // ============================================================================
-    // ↓↓↓↓↓ PEGA AQUÍ ABAJO TU LISTADO DE PREGUNTAS JSON ↓↓↓↓↓
+    // ↓↓↓↓↓ PEGA AQUÍ TU LISTADO COMPLETO DE PREGUNTAS (const allQuestions = [...]) ↓↓↓↓↓
+    
     const allQuestions = [
-  {
+        {
     "id": 1001,
     "q": "España es...",
     "a": "una monarquía parlamentaria.",
@@ -2627,9 +2667,98 @@
     "c": "En tecnología digital.",
     "ans": "a"
   }
-];
-    // ↑↑↑↑↑ PEGA AQUÍ ARRIBA TU LISTADO DE PREGUNTAS JSON ↑↑↑↑↑
+    ];
+    
+    // ↑↑↑↑↑ PEGA AQUÍ TU LISTADO COMPLETO DE PREGUNTAS ↑↑↑↑↑
     // ============================================================================
+
+    // --- CONFIGURACIÓN DE LOGROS ---
+    const DEFINICION_LOGROS = [
+        { id: 'perfecto', icon: '🏆', title: 'Perfeccionista', desc: 'Comienza sin ningún error (20/20).' },
+        { id: 'rapido', icon: '⚡', title: 'Velocista', desc: 'Aprueba en menos de 10 minutos.' },
+        { id: 'primera_vez', icon: '🎓', title: 'Primera Victoria', desc: 'Aprueba el examen por primera vez.' },
+        { id: 'racha_3', icon: '🔥', title: 'En Racha', desc: 'Aprueba 3 exámenes seguidos.' },
+        { id: 'estudiante', icon: '📚', title: 'Aplicado', desc: 'Usa el modo refuerzo para estudiar.' },
+        { id: 'constante', icon: '🗓️', title: 'Constante', desc: 'Completa 5 exámenes en total.' },
+        { id: 'imparable', icon: '🚀', title: 'Imparable', desc: 'Completa 10 exámenes en total.' },
+        { id: 'sobresaliente', icon: '⭐', title: 'Sobresaliente', desc: 'Obtén 18 o más aciertos.' },
+        { id: 'in_extremis', icon: '⏳', title: 'In Extremis', desc: 'Aprueba sobrando menos de 5 min.' },
+        { id: 'limpio', icon: '✨', title: 'Mente Brillante', desc: 'Limpia tu lista de fallos.' }
+    ];
+
+    let userStats = JSON.parse(localStorage.getItem('ccse_stats') || '{"logros": [], "totalExamenes": 0, "rachaActual": 0}');
+
+    function saveStats() {
+        localStorage.setItem('ccse_stats', JSON.stringify(userStats));
+    }
+
+    function toggleLogros() {
+        const modal = document.getElementById('logros-screen');
+        const startScreen = document.getElementById('start-screen');
+        
+        if (modal.style.display === 'flex') {
+            modal.style.display = 'none';
+            startScreen.style.display = 'flex';
+        } else {
+            renderLogros();
+            startScreen.style.display = 'none';
+            modal.style.display = 'flex';
+        }
+    }
+
+    function renderLogros() {
+        const container = document.getElementById('logros-container');
+        container.innerHTML = '';
+        
+        DEFINICION_LOGROS.forEach(logro => {
+            const isUnlocked = userStats.logros.includes(logro.id);
+            const statusClass = isUnlocked ? 'logro-unlocked' : 'logro-locked';
+            
+            container.innerHTML += `
+                <div class="logro-item ${statusClass}">
+                    <div class="logro-icon">${logro.icon}</div>
+                    <div class="logro-title">${logro.title}</div>
+                    <div class="logro-desc">${logro.desc}</div>
+                </div>
+            `;
+        });
+    }
+
+    function unlockLogro(id) {
+        if (!userStats.logros.includes(id)) {
+            userStats.logros.push(id);
+            const logroDesc = DEFINICION_LOGROS.find(l => l.id === id);
+            setTimeout(() => alert(`¡NUEVO LOGRO DESBLOQUEADO!\n\n${logroDesc.icon} ${logroDesc.title}`), 500);
+        }
+    }
+
+    function evaluateAchievements(isTimeout) {
+        const timeElapsedSecs = (TIME_LIMIT_MINUTES * 60) - timeRemaining;
+        const isPass = score >= 15;
+
+        // Actualizar métricas generales
+        userStats.totalExamenes++;
+        if (isPass && !isReinforcementMode) {
+            userStats.rachaActual++;
+            unlockLogro('primera_vez');
+        } else if (!isReinforcementMode) {
+            userStats.rachaActual = 0; // Rompe la racha si suspende en modo normal
+        }
+
+        // Evaluaciones
+        if (score === 20 && !isReinforcementMode) unlockLogro('perfecto');
+        if (isPass && timeElapsedSecs < 600 && !isReinforcementMode) unlockLogro('rapido'); // < 10 mins
+        if (userStats.rachaActual >= 3) unlockLogro('racha_3');
+        if (isReinforcementMode) unlockLogro('estudiante');
+        if (userStats.totalExamenes >= 5) unlockLogro('constante');
+        if (userStats.totalExamenes >= 10) unlockLogro('imparable');
+        if (score >= 18 && !isReinforcementMode) unlockLogro('sobresaliente');
+        if (isPass && timeRemaining < 300 && !isReinforcementMode && !isTimeout) unlockLogro('in_extremis');
+        if (incorrectIds.length === 0 && userStats.totalExamenes > 0) unlockLogro('limpio');
+
+        saveStats();
+    }
+    // --- FIN CONFIGURACIÓN DE LOGROS ---
 
     const MAX_QUESTIONS = 20;
     const TIME_LIMIT_MINUTES = 45; 
@@ -2672,7 +2801,6 @@
     let timeRemaining;
     let soundEnabled = true;
     
-    // Contexto de Audio Web (para los sonidos sutiles de Acierto/Error)
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
     function toggleSound() {
@@ -2681,11 +2809,9 @@
         if (!soundEnabled) window.speechSynthesis.cancel();
     }
 
-    // Función para reproducir el efecto de sonido (Campanita o Boop)
     function playTone(isCorrect) {
         if (!soundEnabled) return;
         
-        // Reanudar el contexto si el navegador lo suspendió
         if (audioCtx.state === 'suspended') {
             audioCtx.resume();
         }
@@ -2697,7 +2823,6 @@
         gainNode.connect(audioCtx.destination);
         
         if (isCorrect) {
-            // Sonido de Acierto (Ding agudo)
             oscillator.type = 'sine';
             oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
             oscillator.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
@@ -2708,7 +2833,6 @@
             oscillator.start(audioCtx.currentTime);
             oscillator.stop(audioCtx.currentTime + 0.3);
         } else {
-            // Sonido de Error (Boop grave)
             oscillator.type = 'triangle';
             oscillator.frequency.setValueAtTime(300, audioCtx.currentTime);
             oscillator.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.2);
@@ -2759,41 +2883,36 @@
     function resetToStart() {
         document.getElementById('results-screen').style.display = 'none';
         document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('logros-screen').style.display = 'none';
         document.getElementById('start-screen').style.display = 'flex';
         updateRefuerzoButtons();
         window.scrollTo(0, 0);
     }
 
     function startQuiz(modeReinforcement) {
-        // Inicializar audio de forma segura tras interacción del usuario
         if (audioCtx.state === 'suspended') { audioCtx.resume(); }
 
         isReinforcementMode = modeReinforcement;
         
         document.getElementById('start-screen').style.display = 'none';
         document.getElementById('results-screen').style.display = 'none';
+        document.getElementById('logros-screen').style.display = 'none';
         document.getElementById('quiz-screen').style.display = 'flex';
         
         document.getElementById('mode-badge').style.display = isReinforcementMode ? 'block' : 'none';
 
         if (isReinforcementMode) {
-            // En modo refuerzo, tomamos las preguntas falladas al azar
             let pool = allQuestions.filter(q => incorrectIds.includes(q.id));
             let shuffled = pool.sort(() => 0.5 - Math.random());
             roundQuestions = shuffled.slice(0, Math.min(MAX_QUESTIONS, shuffled.length));
         } else {
-            // MODO EXAMEN: Distribución estructurada por temas (Basada en los pesos reales del CCSE)
-            // Filtramos por el primer dígito del ID (1, 2, 3, 4, 5) usando Math.floor(id / 1000)
             const t1 = allQuestions.filter(q => Math.floor(q.id / 1000) === 1).sort(() => 0.5 - Math.random()).slice(0, 8);
             const t2 = allQuestions.filter(q => Math.floor(q.id / 1000) === 2).sort(() => 0.5 - Math.random()).slice(0, 2);
             const t3 = allQuestions.filter(q => Math.floor(q.id / 1000) === 3).sort(() => 0.5 - Math.random()).slice(0, 2);
             const t4 = allQuestions.filter(q => Math.floor(q.id / 1000) === 4).sort(() => 0.5 - Math.random()).slice(0, 3);
             const t5 = allQuestions.filter(q => Math.floor(q.id / 1000) === 5).sort(() => 0.5 - Math.random()).slice(0, 5);
 
-            // Juntamos todas las preguntas seleccionadas
             let combined = [...t1, ...t2, ...t3, ...t4, ...t5];
-            
-            // Mezclamos el resultado final para que los temas salgan salteados durante el test
             roundQuestions = combined.sort(() => 0.5 - Math.random());
         }
         
@@ -2848,10 +2967,8 @@
         
         const isCorrect = (selectedLetter === correctLetter);
 
-        // Reproducir efecto de sonido
         playTone(isCorrect);
 
-        // LÓGICA DE MEMORIA (Añadir/Quitar fallos)
         if (isCorrect) {
             if (isReinforcementMode) {
                 incorrectIds = incorrectIds.filter(id => id !== q.id);
@@ -2906,6 +3023,9 @@
         clearInterval(timerInterval); 
         window.speechSynthesis.cancel();
         updateRefuerzoButtons(); 
+
+        // LÓGICA DE LOGROS INTEGRADA AQUÍ
+        evaluateAchievements(timeOut); 
 
         document.getElementById('quiz-screen').style.display = 'none';
         document.getElementById('results-screen').style.display = 'flex';
